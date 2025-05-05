@@ -1,25 +1,27 @@
 "use client";
-import { useQuery } from "@tanstack/react-query";
-// import { API } from "@/util/axios";
-import Image from "next/image";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-
+import ReactMarkdown from 'react-markdown';
 
 export default function Home() {
+  const queryClient = useQueryClient();
   const [username, setUsername] = useState("");
-  async function submit() {
-    const trimmedUsername = username.trim() 
-    const { status, data, error, isFetching } = useQuery({
-      queryKey: ["roast", trimmedUsername],
-      queryFn: async () => {
-        fetch(`/api/roast?username=${trimmedUsername}`);
-      },
-    });
-   
-    
-  }
+  const { data, isLoading, isError, isFetched, error, refetch } = useQuery(
+    {
+      queryKey: ["roast", username],
+      queryFn: async () => await fetch(`/api/roast?username=${username.trim()}`).then(res => res.json()),
+      enabled: false, // Keeps the query disabled initially
+    }
+  );
+
+  const submit = async () => {
+    if (username.trim()) {
+      await refetch(); // Manually triggers the query
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen ">
+    <div className="flex flex-col items-center justify-center min-h-screen">
       <div className="text-2xl font-bold text-center">
         Roast My LeetCode Profile
       </div>
@@ -36,12 +38,21 @@ export default function Home() {
           onChange={(e) => setUsername(e.target.value)}
           className="border border-gray-300 rounded p-2 w-full max-w-xs"
         />
-        <button className="bg-blue-500 text-white rounded p-2 w-full max-w-xs" 
-        onClick={submit}>
-          Roast Me!
+        <button 
+          className="bg-blue-500 text-white rounded p-2 w-full max-w-xs" 
+          onClick={submit}
+        >
+          {isLoading ? "Loading..." : "Roast Me!"}
         </button>
+
+        {isError && <p className="text-red-500">Error: {error?.message}</p>}
+
+        {isFetched && data?.json?.roast && (
+          <div className="flex flex-col w-11/12">
+            <ReactMarkdown>{data?.json.roast}</ReactMarkdown>
+          </div>
+        )}
       </div>
     </div>
   );
 }
-

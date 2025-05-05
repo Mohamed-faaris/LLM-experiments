@@ -10,7 +10,7 @@ export async function GET(request: Request) {
     }
 
     //for testing purposes
-    if (username === "test") {
+    {if (username === "test") {
       const res = `Alright, let's see what we can dig up on mohammedfaaris2005. Brace yourself, Faaris.
 
 Okay, so "Mohamed Faaris" uses his email as a "website"? Bold move. Is that where you host your portfolio? I hope it has a slightly better UI than LeetCode's submission stats.
@@ -24,22 +24,22 @@ Speaking of which, 236 accepted solutions out of 789 submissions... ouch. That's
 Look it's still an improvement so good luck in the future!`;
 
       return new Response(res, { status: 200 });
-    }
+    }}
 
-    const leetcodeStats: any = await leetcodeAPI.get(`/user/${username}`);
-    console.log(leetcodeStats);
-    if (leetcodeStats.status !== 200) {
-      return new Response(`Error: ${leetcodeStats.detail}`, {
-        status: 400,
+    const leetcodeStats: any = await leetcodeAPI.get(`/user/${username}`, {
+      validateStatus: (status) =>  (status >= 200 && status < 300) || status === 500
+    });
+    if (leetcodeStats.status === 500) {
+      return new Response(JSON.stringify(leetcodeStats.data), {
+        status: 404,
         headers: { "Content-Type": "application/json" },
       });
     }
 
     const response = await ai.models.generateContent({
       model: model,
-      contents: `{JSON.stringify(leetcodeStats.data) roast this profile\nvery personal\njust do that}`,
+      contents: `${JSON.stringify(leetcodeStats.data)} roast this profile\nvery personal\njust do that\ngive as output Markdown document\n`,
     });
-    console.log(response);
     return new Response(
       JSON.stringify({
         username: username,
@@ -49,9 +49,8 @@ Look it's still an improvement so good luck in the future!`;
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error(error);
     return new Response(
-      JSON.stringify({ errorMessage: "Invalid request", error }),
+      JSON.stringify({ errorMessage: "Invalid request",  error }),
       {
         status: 400,
         headers: { "Content-Type": "application/json" },
